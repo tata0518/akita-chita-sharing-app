@@ -519,8 +519,46 @@ async function saveSingle() {
 const BATCH_TABS = [
   { id: 'c', tag: 'ちーた', cls: 'chita', person: CH },
   { id: 'a', tag: 'あきた', cls: 'akita', person: AK },
-  { id: 'm', tag: '夕食・備考', cls: 'common', person: null }
+  { id: 'm', tag: 'その他・設定', cls: 'common', person: null }
 ];
+
+function renderBatch() {
+  const body = $('batchBody');
+  const scroll = body.scrollTop;
+  const who = BATCH_TABS.find(t => t.id === batch.who).person;   // その他・設定タブでは null
+
+  $('batchWho').innerHTML = BATCH_TABS.map(t =>
+    `<button class="${t.cls} ${t.id === batch.who ? 'on' : ''}" onclick="setBatchWho('${t.id}')">${t.tag}</button>`
+  ).join('');
+
+  let html = '';
+  weekDates(batch.monday).forEach(dt => {
+    const k = keyOf(dt), dd = batch.draft[k] || {};
+    const hol = batchHol(dt), name = holidayName(dt);
+    const label = `${dt.getMonth() + 1}/${dt.getDate()} (${DOW[dt.getDay()]}) ${name ? `[${name}]` : ''}`;
+
+    if (who) {
+      const p = (who.id === CH.id ? dd.chita : dd.akita) || {};
+      html += `
+        <div class="bhead"><span>${label}</span></div>
+        <div class="bbody"><div class="eline">${editLine('batch', k, who, p, hol)}</div></div>`;
+    } else {
+      html += `
+        <div class="bhead">
+          <span>${label}</span>
+          <label><input type="checkbox" id="batch_hol_${k}" ${hol ? 'checked' : ''} onchange="toggleBatchHol('${k}')"> 休日設定</label>
+        </div>
+        <div class="bbody">
+          <div class="eline">
+            <input id="batch_${k}_menu" value="${esc(dd.menu)}" placeholder="夕食メニュー">
+            <input id="batch_${k}_memo" value="${esc(dd.memo)}" placeholder="備考">
+          </div>
+        </div>`;
+    }
+  });
+  body.innerHTML = html;
+  body.scrollTop = scroll;
+}
 
 function openBatch() {
   const monday = mondayOf(cur);
@@ -541,48 +579,6 @@ function setBatchWho(id) {
   batch.who = id;
   renderBatch();
   $('batchBody').scrollTop = 0;
-}
-
-function renderBatch() {
-  const body = $('batchBody');
-  const scroll = body.scrollTop;
-  const tabInfo = BATCH_TABS.find(t => t.id === batch.who);
-  const who = tabInfo.person;           // 夕食・備考タブでは null
-
-  $('batchWho').innerHTML = BATCH_TABS.map(t =>
-    `<button class="${t.cls} ${t.id === batch.who ? 'on' : ''}" onclick="setBatchWho('${t.id}')">${t.tag}</button>`
-  ).join('');
-
-  let html = '';
-  weekDates(batch.monday).forEach(dt => {
-    const k = keyOf(dt), dd = batch.draft[k] || {};
-    const hol = batchHol(dt), name = holidayName(dt);
-    const label = `${dt.getMonth() + 1}/${dt.getDate()} (${DOW[dt.getDay()]}) ${name ? `[${name}]` : ''}`;
-
-    if (who) {
-      const p = (who.id === CH.id ? dd.chita : dd.akita) || {};
-      html += `
-        <div class="bhead">
-          <span>${label}</span>
-          <label><input type="checkbox" id="batch_hol_${k}" ${hol ? 'checked' : ''} onchange="toggleBatchHol('${k}')"> 休日設定</label>
-        </div>
-        <div class="bbody">
-          <div class="mini ${who.cls}">●${who.tag}</div>
-          <div class="eline">${editLine('batch', k, who, p, hol)}</div>
-        </div>`;
-    } else {
-      html += `
-        <div class="bhead"><span>${label}</span></div>
-        <div class="bbody">
-          <div class="eline">
-            <input id="batch_${k}_menu" value="${esc(dd.menu)}" placeholder="夕食メニュー">
-            <input id="batch_${k}_memo" value="${esc(dd.memo)}" placeholder="備考">
-          </div>
-        </div>`;
-    }
-  });
-  body.innerHTML = html;
-  body.scrollTop = scroll;
 }
 
 
