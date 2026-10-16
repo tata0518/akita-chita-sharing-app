@@ -78,9 +78,25 @@ header button{background:#fff;border:1px solid var(--bd);padding:4px 8px;border-
 .bhead{display:flex;justify-content:space-between;align-items:center;background:#eee;padding:4px 8px;margin-top:10px;border-radius:3px;font-weight:bold}
 .bhead label{font-size:11px;font-weight:normal;cursor:pointer;display:flex;align-items:center;gap:3px}
 .bbody{padding:4px 0}.bbody .eline{margin-bottom:3px}
+.wsel{display:flex;gap:8px;padding:8px 12px;border-bottom:1px solid var(--bd);flex-shrink:0}
+.wsel button{flex:1;padding:8px;font-size:14px;font-weight:bold;border-radius:6px;border:2px solid var(--bd);background:#fff;cursor:pointer}
+.wsel button.chita.on{background:var(--chita);border-color:var(--chita);color:#fff}
+.wsel button.akita.on{background:var(--akita);border-color:var(--akita);color:#fff}
+.wsel button.common.on{background:#555;border-color:#555;color:#fff}
 #toast{position:fixed;left:50%;bottom:88px;transform:translateX(-50%);max-width:90%;padding:8px 14px;border-radius:18px;background:#333;color:#fff;font-size:13px;z-index:2000;display:none;text-align:center}
 #toast.err{background:#c62828}
 .embedded .tabbar{display:none}
+/* 一括編集モーダルの余白を詰める */
+#batchModal .modal{
+  height:auto;
+  max-height:calc(100dvh - 240px);
+}
+#batchModal{align-items:flex-start;padding-top:20px}
+#batchBody{padding:6px 12px}
+#batchBody .bhead{margin-top:6px;padding:3px 8px}
+#batchBody .bhead:first-child{margin-top:0}
+#batchBody .bbody{padding:3px 0 0}
+#batchBody .bbody .eline{margin-bottom:0}
 </style>
 </head>
 <body>
@@ -125,6 +141,7 @@ header button{background:#fff;border:1px solid var(--bd);padding:4px 8px;border-
 
 <div class="overlay" id="batchModal"><div class="modal">
   <div class="mh"><span>1週間分の一括編集</span><button class="x" onclick="closeModal('batchModal')">×</button></div>
+  <div class="wsel" id="batchWho"></div>   <!-- ← この1行を追加 -->
   <div class="mb" id="batchBody"></div>
   <div class="mf"><button class="dark" id="batchSaveBtn" onclick="saveBatch()">一括保存</button></div>
 </div></div>
@@ -510,46 +527,75 @@ async function saveSingle() {
 }
 
 // ============ 一括編集 ============
+const BATCH_TABS = [
+  { id: 'c', tag: 'ちーた', cls: 'chita', person: CH },
+  { id: 'a', tag: 'あきた', cls: 'akita', person: AK },
+  { id: 'm', tag: 'その他・設定', cls: 'common', person: null }
+];
+
+function renderBatch() {
+  const body = $('batchBody');
+  const scroll = body.scrollTop;
+  const who = BATCH_TABS.find(t => t.id === batch.who).person;   // その他・設定タブでは null
+
+  $('batchWho').innerHTML = BATCH_TABS.map(t =>
+    `<button class="${t.cls} ${t.id === batch.who ? 'on' : ''}" onclick="setBatchWho('${t.id}')">${t.tag}</button>`
+  ).join('');
+
+  let html = '';
+  weekDates(batch.monday).forEach(dt => {
+    const k = keyOf(dt), dd = batch.draft[k] || {};
+    const hol = batchHol(dt), name = holidayName(dt);
+    const label = `${dt.getMonth() + 1}/${dt.getDate()} (${DOW[dt.getDay()]}) ${name ? `[${name}]` : ''}`;
+
+    if (who) {
+      const p = (who.id === CH.id ? dd.chita : dd.akita) || {};
+      html += `
+        <div class="bhead"><span>${label}</span></div>
+        <div class="bbody"><div class="eline">${editLine('batch', k, who, p, hol)}</div></div>`;
+    } else {
+      html += `
+        <div class="bhead">
+          <span>${label}</span>
+          <label><input type="checkbox" id="batch_hol_${k}" ${hol ? 'checked' : ''} onchange="toggleBatchHol('${k}')"> 休日設定</label>
+        </div>
+        <div class="bbody">
+          <div class="eline">
+            <input id="batch_${k}_menu" value="${esc(dd.menu)}" placeholder="夕食メニュー">
+            <input id="batch_${k}_memo" value="${esc(dd.memo)}" placeholder="備考">
+          </div>
+        </div>`;
+    }
+  });
+  body.innerHTML = html;
+  body.scrollTop = scroll;
+}
+
 function openBatch() {
   const monday = mondayOf(cur);
-  batch = { monday, draft: {}, ov: {} };
+  batch = { monday, draft: {}, ov: {}, who: 'c' };
   weekDates(monday).forEach(dt => {
     const k = keyOf(dt);
     batch.draft[k] = clone(data[k] || {});
     batch.ov[k] = data[k]?.isHolidayOverride;
   });
   renderBatch();
+  $('batchBody').scrollTop = 0;
   $('batchModal').classList.add('open');
 }
+
+function setBatchWho(id) {
+  if (batch.who === id) return;
+  collectBatch();                       // 入力途中の内容を退避
+  batch.who = id;
+  renderBatch();
+  $('batchBody').scrollTop = 0;
+}
+
 
 function batchHol(dt) {
   const o = batch.ov[keyOf(dt)];
   return typeof o === 'boolean' ? o : baseHoliday(dt);
-}
-
-function renderBatch() {
-  const body = $('batchBody');
-  const scroll = body.scrollTop;
-  let html = '';
-  weekDates(batch.monday).forEach(dt => {
-    const k = keyOf(dt), dd = batch.draft[k] || {};
-    const hol = batchHol(dt), name = holidayName(dt);
-    html += `
-      <div class="bhead">
-        <span>${dt.getMonth() + 1}/${dt.getDate()} (${DOW[dt.getDay()]}) ${name ? `[${name}]` : ''}</span>
-        <label><input type="checkbox" id="batch_hol_${k}" ${hol ? 'checked' : ''} onchange="toggleBatchHol('${k}')"> 休日設定</label>
-      </div>
-      <div class="bbody">
-        <div class="mini chita">●ちーた</div><div class="eline">${editLine('batch', k, CH, dd.chita || {}, hol)}</div>
-        <div class="mini akita">●あきた</div><div class="eline">${editLine('batch', k, AK, dd.akita || {}, hol)}</div>
-        <div class="eline">
-          <input id="batch_${k}_menu" value="${esc(dd.menu)}" placeholder="夕食メニュー">
-          <input id="batch_${k}_memo" value="${esc(dd.memo)}" placeholder="備考">
-        </div>
-      </div>`;
-  });
-  body.innerHTML = html;
-  body.scrollTop = scroll;
 }
 
 function collectBatch() {
