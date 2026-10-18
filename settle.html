@@ -381,6 +381,14 @@
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbx2Lw5WUCTocfDQhCUaNqBhJGrPYqBgwpjT5hnYtyFGYAvIKLKIe8UiWNCTaaO1Bsg/exec"; 
         let items = [];
+        function getToken() {
+            let t = localStorage.getItem('appToken');
+            if (!t) {
+                t = prompt('合言葉を入力してください') || '';
+                if (t) localStorage.setItem('appToken', t.trim());
+            }
+            return t ? t.trim() : '';
+        }
 
         // 設定の管理
         let displayOrder = localStorage.getItem('displayOrder') || 'chita';
@@ -574,9 +582,18 @@
             const loading = document.getElementById('loading');
             loading.style.display = 'block';
 
-            fetch(GAS_URL)
-                .then(res => res.json())
-                .then(data => {
+        // 変更後
+        fetch(GAS_URL + '?token=' + encodeURIComponent(getToken()))
+            .then(res => res.json())
+            .then(data => {
+                if (!Array.isArray(data)) {
+                    localStorage.removeItem('appToken');
+                    loading.style.display = 'none';
+                    alert('合言葉が違います。もう一度開き直して入力してください。');
+                    return;
+                }
+                items = data.map(item => {
+        
                     items = data.map(item => {
                         let formattedDate = '';
                         if (item.date) {
@@ -659,14 +676,15 @@
             }
 
             const id = editId ? editId : String(Date.now());
-            const payload = { action: 'save', item: { id, date, title, payer, amount, ratio, memo, note } };
+            const payload = { action: 'save', token: getToken(), item: { id, date, title, payer, amount, ratio, memo, note } };
+
 
             const loading = document.getElementById('loading');
             loading.style.display = 'block';
 
             fetch(GAS_URL, {
                 method: 'POST',
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ action: 'delete', id: editId, token: getToken() })
             })
             .then(res => res.json())
             .then(() => {
