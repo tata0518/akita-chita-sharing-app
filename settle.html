@@ -381,7 +381,7 @@
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbx2Lw5WUCTocfDQhCUaNqBhJGrPYqBgwpjT5hnYtyFGYAvIKLKIe8UiWNCTaaO1Bsg/exec"; 
         let items = [];
-        
+
         // 設定の管理
         let displayOrder = localStorage.getItem('displayOrder') || 'chita';
         let rowHeight = localStorage.getItem('rowHeight') || 'normal';
@@ -574,11 +574,9 @@
             const loading = document.getElementById('loading');
             loading.style.display = 'block';
 
-        fetch(GAS_URL)
-            .then(res => res.json())
-            .then(data => {
-                items = data.map(item => {
-
+            fetch(GAS_URL)
+                .then(res => res.json())
+                .then(data => {
                     items = data.map(item => {
                         let formattedDate = '';
                         if (item.date) {
@@ -661,16 +659,14 @@
             }
 
             const id = editId ? editId : String(Date.now());
-const payload = { action: 'save', item: { ... } };
-
+            const payload = { action: 'save', item: { id, date, title, payer, amount, ratio, memo, note } };
 
             const loading = document.getElementById('loading');
             loading.style.display = 'block';
 
             fetch(GAS_URL, {
                 method: 'POST',
-body: JSON.stringify({ action: 'delete', id: editId })
-
+                body: JSON.stringify(payload)
             })
             .then(res => res.json())
             .then(() => {
