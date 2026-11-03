@@ -4,20 +4,23 @@
 <meta property="og:description" content="2人のスケジュールや精算を簡単に管理・共有できるアプリです。">
 <meta property="og:type" content="website">
 
-<!-- viewport-fit=cover は元に戻しました(下のタブバーの位置を元通りにするため) -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>あきた＆ちーた</title>
 <link rel="icon" href="./favicon.png" type="image/png">
 <link rel="apple-touch-icon" href="./favicon.png">
 <style>
 :root{
-  /* ★実験用: 画面上部の余白(px)。ぼかしが消える最小の値を探す。0なら元の表示 */
-  --top-gap: 10px;
+  /* 画面上部の追加余白(px)。ぼかしが戻る場合だけ 10px→20px… と増やす */
+  --top-gap: 0px;
   --top-offset: calc(env(safe-area-inset-top, 0px) + var(--top-gap));
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-html,body{width:100%;height:100%;overflow:hidden;background:#f5f5f5}
-#root{position:relative;display:flex;flex-direction:column;height:100vh;height:100dvh}
+
+/* ページ全体を画面に固定し、ページ自体はスクロールさせない */
+html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none;background:#f5f5f5}
+body{position:fixed;inset:0;width:100%;height:auto}
+
+#root{display:flex;flex-direction:column;height:100%}
 
 .frames{flex:1;position:relative;min-height:0;background:#f5f5f5}
 
