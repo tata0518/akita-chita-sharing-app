@@ -1,30 +1,27 @@
 <head>
 <meta charset="UTF-8">
-      <!-- OGPタグ -->
-    <meta property="og:description" content="2人のスケジュールや精算を簡単に管理・共有できるアプリです。">
-    <meta property="og:type" content="website">
+<!-- OGPタグ -->
+<meta property="og:description" content="2人のスケジュールや精算を簡単に管理・共有できるアプリです。">
+<meta property="og:type" content="website">
 
-<!-- ① viewport-fit=cover を追加 -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<!-- viewport-fit=cover を削除(iOSのステータスバー部分のぼかし対策) -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>あきた＆ちーた</title>
 <link rel="icon" href="./favicon.png" type="image/png">
 <link rel="apple-touch-icon" href="./favicon.png">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 html,body{width:100%;height:100%;overflow:hidden;background:#f5f5f5}
-#root{display:flex;flex-direction:column;height:100vh;height:100dvh}
+#root{position:relative;display:flex;flex-direction:column;height:100vh;height:100dvh}
 
-/* 修正1: ステータスバーの裏まで不透明の背景を敷く */
 .frames{flex:1;position:relative;min-height:0;background:#f5f5f5}
 
-/* 修正2: iframeをステータスバー(安全領域)の下から始める
-   ※iframeは置換要素なので、top/bottomではなくheightを明示する */
 iframe{
   position:absolute;
-  top:env(safe-area-inset-top, 0px);
+  top:0;
   left:0;
   width:100%;
-  height:calc(100% - env(safe-area-inset-top, 0px));
+  height:100%;
   border:0;
   display:none;
   background:#f5f5f5;
@@ -33,7 +30,7 @@ iframe.active{display:block}
 
 nav {
   position: absolute;
-  bottom: 20px;
+  bottom: 0;
   left: 16px;
   right: 16px;
   height: 64px;
@@ -47,7 +44,6 @@ nav {
   justify-content: space-around;
   z-index: 1000;
 }
-
 
 .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border:none;background:none;color:#777;font-size:12px;cursor:pointer}
 .tab span{font-size:18px;margin-bottom:2px}
